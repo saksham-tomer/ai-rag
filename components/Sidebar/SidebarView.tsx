@@ -1,8 +1,9 @@
 import Image from "next/image";
 import React from "react";
 import PortAILogo from '@/public/PortAi.png'
-import { PanelRight, Settings } from "lucide-react";
+import { PanelRight, Plus, Settings } from "lucide-react";
 import ChatSearch from "./ChatSearch";
+import Tabs from "./Tabs";
 
 export default function SidebarView({ children }: { children: React.ReactNode }) {
     return (
@@ -24,6 +25,13 @@ export default function SidebarView({ children }: { children: React.ReactNode })
                 </div>
                 <ChatSearch />
             </section>
+            <section className="w-full mt-12">
+                <Tabs currentTab={0}/>
+            </section>
+            <button className="p-2 text-white py-3 text-sm gap-2 bg-gradient-to-b from-[#4C29FD] to-[#6927FF] w-full mt-4 rounded-xl hover:bg-[#6927FF] transition-colors duration-200 ease-in-out cursor-pointer text-center flex flex-row items-center justify-center">
+                <Plus className="w-4 h-4 text-white"/>
+                Start new chat
+            </button>
             <section className="w-full mt-4">
                 {children}
             </section>
