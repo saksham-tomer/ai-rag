@@ -1,0 +1,32 @@
+import Image from "next/image";
+import React from "react";
+import PortAILogo from '@/public/PortAi.png'
+import { PanelRight, Settings } from "lucide-react";
+import ChatSearch from "./ChatSearch";
+
+export default function SidebarView({ children }: { children: React.ReactNode }) {
+    return (
+        <nav className="flex bg-[var(--gray)] flex-col font-[var(--font-inter)] min-h-screen  max-w-[20rem] items-center p-4 lg:p-6">
+            <section className="flex flex-row items-center justify-between w-full">
+                <div className="flex items-center gap-2 font-semibold text-2xl text-gray-700">
+                    <Image src={PortAILogo} alt="PortAI Logo" className="w-12 h-12 object-cover" />
+                    PortAI
+                </div>
+                <PanelRight className="max-w-6 max-h-6 cursor-pointer text-[#667084]" />
+            </section>
+            <section className="w-full mt-8">
+                <div className="flex flex-row p-1 mb-2 justify-between items-center">
+                    <div className="flex font-semibold text-gray-600 flex-row gap-2 items-center">
+                        <Image src={PortAILogo} alt="Profile Picture" className="w-10 rounded-full h-10 object-cover" loading="lazy" quality={100} />
+                        Alex Ferguson
+                    </div>
+                    <Settings className="w-5 h-5 text-gray-500" />
+                </div>
+                <ChatSearch />
+            </section>
+            <section className="w-full mt-4">
+                {children}
+            </section>
+        </nav>
+    )
+}

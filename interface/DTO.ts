@@ -1,0 +1,3 @@
+interface chainData{
+    data: string;
+}
