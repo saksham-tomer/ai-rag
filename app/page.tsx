@@ -1,7 +1,13 @@
+import ChatView from "@/components/Chat/ChatView";
 import Image from "next/image";
 
-export default function Home() {
+const props = {
+  title: "How the model determines token",
+  model: "GPT-4"
+}
+
+export default function Page() {
   return (
-    <div className="flex bg-[var(--gray)]"></div>
-  );
+    <ChatView props={props} />
+  )
 }
