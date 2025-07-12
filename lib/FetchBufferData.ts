@@ -12,7 +12,6 @@ export default async function FetchBufferData(chatId: string): Promise<any> {
                     key: chatId
                 })
                 if (doc) {
-                    // console.log("the splitted doc received", doc)
                     return doc;
                 }
             } catch (error) {

@@ -1,7 +1,6 @@
-import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { PineconeStore } from "@langchain/pinecone";
-import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { getPineconeClient } from "./Pinecone";
 import { RunnablePassthrough, RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
@@ -9,25 +8,29 @@ import { formatDocumentsAsString } from "langchain/util/document";
 import { Document } from "@langchain/core/documents";
 
 export class AIComponent {
-    LLMInstance: ChatAnthropic | null = null;
-    embeddings: HuggingFaceInferenceEmbeddings | null = null;
+    LLMInstance: ChatGoogleGenerativeAI | null = null;
+    embeddings: any = null; 
     
     constructor() {
         if (!this.LLMInstance) {
-            this.LLMInstance = new ChatAnthropic({
-                apiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY,
-                model: "claude-3-haiku-20240307",
-                temperature: 0.3,
-                maxTokens: 1000,
-            });
+            const useMockLLM = process.env.USE_MOCK_LLM === 'true' || !process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+            
+            if (useMockLLM) {
+                const { MockLLM } = require('./MockLLM');
+                this.LLMInstance = new MockLLM() as any;
+                console.log('🔧 Using Mock LLM for testing');
+            } else {
+                this.LLMInstance = new ChatGoogleGenerativeAI({
+                    apiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
+                    model: "gemini-1.5-flash",
+                    temperature: 0.3,
+                    maxOutputTokens: 1000,
+                });
+                console.log('🚀 Using Google Gemini LLM');
+            }
         }
 
-        if (!this.embeddings) {
-            this.embeddings = new HuggingFaceInferenceEmbeddings({
-                apiKey: process.env.NEXT_PUBLIC_HF_TOKEN,
-                model: "BAAI/bge-small-en-v0.5",
-            });
-        }
+        this.embeddings = null;
     }
 
     private createRAGPrompt() {
@@ -59,11 +62,32 @@ export class AIComponent {
         Based on the provided context above, please answer the user's question. If the context doesn't contain enough information to fully answer the question, explain what information is missing and provide what you can based on the available context.`);
     }
 
-    private async getVectorStore(namespace: string): Promise<PineconeStore> {
+    protected async getVectorStore(namespace: string): Promise<PineconeStore> {
+        console.log(`AIComponent: Getting vector store for namespace: "${namespace}"`);
         const pineconeClient = await getPineconeClient();
         const pineconeIndex = pineconeClient.Index(process.env.NEXT_PUBLIC_PINECONE_INDEX as string);
+        console.log(`AIComponent: Pinecone index: ${process.env.NEXT_PUBLIC_PINECONE_INDEX}`);
 
-        return await PineconeStore.fromExistingIndex(this.embeddings!, {
+        const customEmbeddings = {
+            embedQuery: async (text: string): Promise<number[]> => {
+                const { default: getEmbeddings } = await import('./HuggingFaceEmbeddings');
+                const result = await getEmbeddings(text);
+                return Array.isArray(result) ? result as number[] : [result as number];
+            },
+            embedDocuments: async (texts: string[]): Promise<number[][]> => {
+                const { default: getEmbeddings } = await import('./HuggingFaceEmbeddings');
+                const result = await getEmbeddings(texts);
+                if (Array.isArray(result) && Array.isArray(result[0])) {
+                    return result as number[][];
+                } else if (Array.isArray(result)) {
+                    return [result as number[]];
+                } else {
+                    return [[result as number]];
+                }
+            }
+        };
+
+        return await PineconeStore.fromExistingIndex(customEmbeddings, {
             pineconeIndex,
             namespace: namespace,
             textKey: "text", 
@@ -75,10 +99,7 @@ export class AIComponent {
             const vectorStore = await this.getVectorStore(namespace);
             const retriever = vectorStore.asRetriever({
                 k: 5, 
-                searchType: "similarity",
-                searchKwargs: {
-                    scoreThreshold: 0.7 
-                }
+                searchType: "similarity"
             });
 
             const prompt = this.createRAGPrompt();
@@ -122,7 +143,6 @@ export class AIComponent {
         }
     }
 
-    // Alternative: Custom retriever with more control
     async customRAGQuery(question: string, namespace: string): Promise<string> {
         try {
             const vectorStore = await this.getVectorStore(namespace);

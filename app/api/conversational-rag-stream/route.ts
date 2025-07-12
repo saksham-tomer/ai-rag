@@ -1,9 +1,9 @@
-import { AIComponent } from "@/lib/AIChain";
+import { ConversationalRAGComponent } from "@/lib/ConversationalRag";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     try {
-        const { question, namespace } = await req.json();
+        const { question, namespace, sessionId } = await req.json();
         
         if (!question || !namespace) {
             return NextResponse.json({
@@ -11,16 +11,19 @@ export async function POST(req: NextRequest) {
             }, { status: 400 });
         }
 
-        const aiComponent = new AIComponent();
-        const stream = await aiComponent.streamRAGQuery(question, namespace);
+        const conversationalRAG = new ConversationalRAGComponent();
+        const stream = await conversationalRAG.streamConversationalRAGQuery(question, namespace, sessionId);
         
         const readableStream = new ReadableStream({
             async start(controller) {
                 try {
-                    for await (const chunk of stream) {
-                        if (chunk) {
+                    const reader = stream.getReader();
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        if (value) {
                             controller.enqueue(
-                                new TextEncoder().encode(`data: ${JSON.stringify({ content: chunk })}\n\n`)
+                                new TextEncoder().encode(`data: ${JSON.stringify({ content: value })}\n\n`)
                             );
                         }
                     }
@@ -42,9 +45,9 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error) {
-        console.error("Error in LangChain streaming route:", error);
+        console.error("Error in conversational RAG streaming route:", error);
         return NextResponse.json({
-            error: "LangChain streaming failed"
+            error: "Conversational RAG streaming failed"
         }, { status: 500 });
     }
-}
+} 

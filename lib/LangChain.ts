@@ -45,8 +45,7 @@ export class LangChainConfig {
         try {
             const loader = new WebPDFLoader(blob, {
                 splitPages: false, 
-                parsedItemSeparator: ' ', 
-                useSystemFonts: true 
+                parsedItemSeparator: ' '
             });
             
             const docs = await loader.load();
@@ -92,7 +91,7 @@ export class LangChainConfig {
 
             console.log(`Processing PDF buffer of size: ${buffer.length} bytes`);
 
-            const blob = new Blob([buffer], { 
+            const blob = new Blob([buffer.buffer || buffer], { 
                 type: "application/pdf" 
             });
 

@@ -1,21 +1,18 @@
 import { ConversationSummaryBufferMemory } from "langchain/memory";
 import { BaseMessage } from "@langchain/core/messages";
-import { AIComponent } from "./AnthropicChain";
+import { AIComponent } from "./AIChain";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnablePassthrough, RunnableSequence } from "@langchain/core/runnables";
 import { formatDocumentsAsString } from "langchain/util/document";
 import { StringOutputParser } from "@langchain/core/output_parsers";
+import { MemoryManager } from "./MemoryManager";
 
 export class ConversationalRAGComponent extends AIComponent {
-    memory: ConversationSummaryBufferMemory;
+    private memoryManager: MemoryManager;
 
     constructor() {
         super();
-        this.memory = new ConversationSummaryBufferMemory({
-            llm: this.LLMInstance!,
-            maxTokenLimit: 500,
-            returnMessages: true,
-        });
+        this.memoryManager = MemoryManager.getInstance();
     }
 
     private createConversationalRAGPrompt() {
@@ -30,12 +27,17 @@ export class ConversationalRAGComponent extends AIComponent {
         Based on the context and our conversation history, provide a helpful response. If referring to previous parts of our conversation, make that clear.`);
     }
 
-    async conversationalRAGQuery(question: string, namespace: string): Promise<string> {
+
+
+    async conversationalRAGQuery(question: string, namespace: string, sessionId: string = 'default'): Promise<string> {
         try {
+            console.log(`ConversationalRAG: Getting vector store for namespace: "${namespace}"`);
             const vectorStore = await this.getVectorStore(namespace);
+            console.log(`ConversationalRAG: Vector store retrieved successfully`);
             const retriever = vectorStore.asRetriever({ k: 5 });
 
-            const chatHistory = await this.memory.chatHistory.getMessages();
+            const memory = this.memoryManager.getOrCreateMemory(sessionId, this.LLMInstance!);
+            const chatHistory = await memory.chatHistory.getMessages();
             const historyString = chatHistory
                 .map((msg: BaseMessage) => `${msg.getType()}: ${msg.content}`)
                 .join('\n');
@@ -53,17 +55,69 @@ export class ConversationalRAGComponent extends AIComponent {
                 new StringOutputParser(),
             ]);
 
+            console.log(`ConversationalRAG: Invoking RAG chain with question: "${question}"`);
             const response = await ragChain.invoke(question);
+            console.log(`ConversationalRAG: Response received, length: ${response.length}`);
 
-            await this.memory.saveContext(
-                { input: question },
-                { output: response }
-            );
+            await this.memoryManager.saveConversation(sessionId, question, response);
 
             return response;
         } catch (error) {
             console.error('Error in conversational RAG:', error);
             throw new Error('Failed to process conversational RAG query');
+        }
+    }
+
+    async streamConversationalRAGQuery(question: string, namespace: string, sessionId: string = 'default') {
+        try {
+            const vectorStore = await this.getVectorStore(namespace);
+            const retriever = vectorStore.asRetriever({ k: 5 });
+
+            const memory = this.memoryManager.getOrCreateMemory(sessionId, this.LLMInstance!);
+            const chatHistory = await memory.chatHistory.getMessages();
+            const historyString = chatHistory
+                .map((msg: BaseMessage) => `${msg.getType()}: ${msg.content}`)
+                .join('\n');
+
+            const prompt = this.createConversationalRAGPrompt();
+            
+            const ragChain = RunnableSequence.from([
+                {
+                    context: retriever.pipe(formatDocumentsAsString),
+                    question: new RunnablePassthrough(),
+                    chat_history: () => historyString,
+                },
+                prompt,
+                this.LLMInstance!,
+                new StringOutputParser(),
+            ]);
+
+            const stream = await ragChain.stream(question);
+            
+            let fullResponse = '';
+            const memoryManagerRef = this.memoryManager; 
+            const transformedStream = new ReadableStream({
+                async start(controller) {
+                    try {
+                        for await (const chunk of stream) {
+                            if (chunk) {
+                                fullResponse += chunk;
+                                controller.enqueue(chunk);
+                            }
+                        }
+                        await memoryManagerRef.saveConversation(sessionId, question, fullResponse);
+                        controller.close();
+                    } catch (error) {
+                        console.error('Stream error:', error);
+                        controller.error(error);
+                    }
+                }
+            });
+
+            return transformedStream;
+        } catch (error) {
+            console.error('Error in streaming conversational RAG:', error);
+            throw new Error('Failed to process streaming conversational RAG query');
         }
     }
 }

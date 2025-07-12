@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
             }, { status: 400 });
         }
 
-        //validation step
+        //validation
         const maxFileSize = 50 * 1024 * 1024; 
         if (uint8Buffer.length > maxFileSize) {
             return NextResponse.json({ 

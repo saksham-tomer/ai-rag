@@ -1,4 +1,4 @@
-import { AIComponent } from "@/lib/AnthropicChain";
+import { AIComponent } from "@/lib/AIChain";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
