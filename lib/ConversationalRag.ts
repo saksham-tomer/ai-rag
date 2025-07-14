@@ -24,7 +24,8 @@ export class ConversationalRAGComponent extends AIComponent {
         
         Human: {question}
         
-        Based on the context and our conversation history, provide a helpful response. If referring to previous parts of our conversation, make that clear.`);
+        Based on the context and our conversation history, provide a helpful response. If referring to previous parts of our conversation, make that clear. 
+        Note: provide responses in beautiful markdown and use different styles like bold, italics, ordered or unordered lists, and other styles to make it vizually appealing`);
     }
 
 

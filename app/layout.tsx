@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
-import SidebarView from "@/components/Sidebar/SidebarView";
-import LayoutView from "@/components/Chat/LayoutView";
-import { SidebarProvider } from "@/components/Sidebar/SidebarContext";
-import {SessionProvider, useSession} from 'next-auth/react'
+import Layout from "@/components/Layout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +24,6 @@ export const metadata: Metadata = {
   description: "Your go to pdf summarizer",
 };
 
-const {data:session} = useSession();
 
 export default function RootLayout({
   children,
@@ -36,15 +32,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <SessionProvider session={session}>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased bg-[var(--gray)]`}
-      >
-        <SidebarProvider>
-        <LayoutView children={children} />
-        </SidebarProvider>
-      </body>
-      </SessionProvider>
+      <Layout 
+        children={children} 
+        props={{
+          geistSans,
+          geistMono,
+          inter
+        }}
+      />
     </html>
   );
 }

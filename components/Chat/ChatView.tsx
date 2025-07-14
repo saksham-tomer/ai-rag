@@ -5,7 +5,10 @@ import React, { useEffect, useState, useRef } from "react";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { ParamValue } from "next/dist/server/request/params";
 import { ChatMessage, RAGQueryRequest, RAGQueryResponse } from "@/interface";
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import ChatComponent from "./ChatComponent";
+import { Components } from "@/config/MdConfig";
 
 type HomeProps = {
     title: string | undefined,
@@ -19,16 +22,12 @@ export default function ChatView({ props, chatId }: { props: HomeProps, chatId: 
     const [isLoading, setIsLoading] = useState(false);
     const [sessionId] = useState(`session-${chatId}-${Date.now()}`);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [namespace, setNamespace] = useState(""); // Will be set based on chatId
+    const [namespace, setNamespace] = useState(""); 
 
-    // Extract namespace from chatId (which is the processed S3 key)
     useEffect(() => {
         if (chatId && typeof chatId === 'string') {
-            // The chatId is already the processed S3 key, so we can use it directly
-            // Just ensure it's clean for namespace use
             const cleanNamespace = chatId.replace(/[^\x00-\x7F]+/g, "");
             setNamespace(cleanNamespace);
-            console.log(`Setting namespace to: ${cleanNamespace} from chatId: ${chatId}`);
         }
     }, [chatId]);
 
@@ -172,13 +171,27 @@ export default function ChatView({ props, chatId }: { props: HomeProps, chatId: 
                         <div
                             className={`max-w-[70%] p-3 rounded-lg ${
                                 message.role === 'user'
-                                    ? 'bg-blue-500 text-white'
+                                    ? 'bg-gradient-to-r from-purple-100 to-purple-200 text-gray-600'
                                     : 'bg-gray-100 text-gray-800'
                             }`}
                         >
-                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                            {/* <p className="text-sm whitespace-pre-wrap">{message.content}</p> */}
+                            <Markdown
+                                children={message.content}
+                                remarkPlugins={[remarkGfm]}
+                                components={Components}
+                                urlTransform={(url) => {
+                                    if (!/^https?:\/\//i.test(url)) {
+                                        return `https://${url}`;
+                                    }
+                                    return url;
+                                }}
+                            />
                             <p className="text-xs opacity-70 mt-1">
-                                {message.timestamp.toLocaleTimeString()}
+                                {message.timestamp.toLocaleTimeString("en-US",{
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                })}
                             </p>
                         </div>
                     </div>
@@ -186,10 +199,10 @@ export default function ChatView({ props, chatId }: { props: HomeProps, chatId: 
                 
                 {isLoading && (
                     <div className="flex justify-start">
-                        <div className="bg-gray-100 text-gray-800 max-w-[70%] p-3 rounded-lg">
-                            <div className="flex items-center gap-2">
+                        <div className="bg-gradient-to-r font-medium from-purple-100 via-purple-200 to-purple-300 text-gray-700 max-w-[70%] p-3 rounded-lg">
+                            <div className="flex items-center gap-2 ">
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                <span className="text-sm">Thinking...</span>
+                                <span className="text-sm">Thinking</span>
                             </div>
                         </div>
                     </div>

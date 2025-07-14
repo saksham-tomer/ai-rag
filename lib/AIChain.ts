@@ -13,21 +13,16 @@ export class AIComponent {
     
     constructor() {
         if (!this.LLMInstance) {
-            const useMockLLM = process.env.USE_MOCK_LLM === 'true' || !process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-            
-            if (useMockLLM) {
-                const { MockLLM } = require('./MockLLM');
-                this.LLMInstance = new MockLLM() as any;
-                console.log('🔧 Using Mock LLM for testing');
-            } else {
+            if(process.env.NEXT_PUBLIC_GOOGLE_API_KEY)
+            {
                 this.LLMInstance = new ChatGoogleGenerativeAI({
                     apiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
                     model: "gemini-1.5-flash",
                     temperature: 0.3,
                     maxOutputTokens: 1000,
                 });
-                console.log('🚀 Using Google Gemini LLM');
             }
+            else console.log('💀 NO LLM KEY PROVIDED');
         }
 
         this.embeddings = null;
@@ -42,6 +37,7 @@ export class AIComponent {
         - If the context doesn't contain sufficient information, clearly state this limitation
         - Cite relevant parts of the context when appropriate
         - Maintain a professional, friendly tone
+        - Give output in markdown that looks beautiful
 
         CONTEXT HANDLING:
         - Only use information directly available in the context provided
@@ -59,7 +55,8 @@ export class AIComponent {
 
         Question: {question}
 
-        Based on the provided context above, please answer the user's question. If the context doesn't contain enough information to fully answer the question, explain what information is missing and provide what you can based on the available context.`);
+        Based on the provided context above, please answer the user's question. If the context doesn't contain enough information to fully answer the question, explain what information is missing and provide what you can based on the available context.
+        And give output in markdown`);
     }
 
     protected async getVectorStore(namespace: string): Promise<PineconeStore> {
