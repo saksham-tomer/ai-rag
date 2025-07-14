@@ -4,6 +4,7 @@ import "./globals.css";
 import SidebarView from "@/components/Sidebar/SidebarView";
 import LayoutView from "@/components/Chat/LayoutView";
 import { SidebarProvider } from "@/components/Sidebar/SidebarContext";
+import {SessionProvider, useSession} from 'next-auth/react'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,6 +27,8 @@ export const metadata: Metadata = {
   description: "Your go to pdf summarizer",
 };
 
+const {data:session} = useSession();
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,6 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <SessionProvider session={session}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased bg-[var(--gray)]`}
       >
@@ -40,6 +44,7 @@ export default function RootLayout({
         <LayoutView children={children} />
         </SidebarProvider>
       </body>
+      </SessionProvider>
     </html>
   );
 }
