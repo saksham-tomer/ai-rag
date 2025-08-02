@@ -32,11 +32,19 @@ enum TagColors {
     CYAN = 'bg-cyan-500/30',
 }
 
+enum NodeTypes {
+    PARENT = "parent",
+    CHILD = "child",
+    PARTIALLY_RELATED = "partiallyRelated",
+    HEADER = "header",
+}
+
 interface GenericNodeParams {
     heading: string | null;
     description: string | null;
     tags?: string[] | null | undefined;
     tagColor?: TagColors;
+    nodeType?: NodeTypes | string | null;
 }
 
 const tagTextColorMap: Record<TagColors, string> = {
@@ -68,11 +76,24 @@ function GenericNode({ data }: { data: GenericNodeParams }): React.ReactNode {
         return data.tags.map(() => getRandomTagColor());
     }, [data.tags]);
 
-    return (
-        <div className='shadow-lg bg-gray-50 rounded-lg p-2 min-w-[15rem] min-h-[8rem] md:p-4 lg:p-6 xl:p-8 flex flex-col items-start gap-2 relative'>
+    const isHeader = data.nodeType === NodeTypes.HEADER;
+    const borderStyle = isHeader
+        ? {
+            borderWidth: 2,
+            borderStyle: 'dashed',
+            borderColor: '#a855f7',
+            boxShadow: '0 4px 24px 0 rgba(168,85,247,0.10)',
+            background: '#faf5ff',
+        }
+        : {};
 
-            <Handle type="target" style={{backgroundColor: "grey"}} position={Position.Left} className="w-2 h-2 bg-blue-500 p-1" />
-            <Handle type="source" style={{backgroundColor: "grey"}} position={Position.Right} className="w-2 h-2 bg-blue-500 p-1" />
+    return (
+        <div
+            className={`shadow-lg bg-gray-50 rounded-lg p-2 min-w-[15rem] min-h-[8rem] md:p-4 lg:p-6 xl:p-8 flex flex-col items-start gap-2 relative`}
+            style={borderStyle}
+        >
+            <Handle type="target" style={{ backgroundColor: "grey" }} position={Position.Left} className="w-2 h-2 bg-blue-500 p-1" />
+            <Handle type="source" style={{ backgroundColor: "grey" }} position={Position.Right} className="w-2 h-2 bg-blue-500 p-1" />
 
             <div className='flex flex-row w-full items-center justify-between'>
                 <div className='flex gap-2 items-center'>
@@ -104,6 +125,18 @@ function GenericNode({ data }: { data: GenericNodeParams }): React.ReactNode {
 
 const initialNodes: Node[] = [
     {
+        id: 'n0',
+        type: 'header',
+        position: { x: 200, y: 50 },
+        data: {
+            heading: 'Parent Header',
+            description: 'This is the parent header node.',
+            tags: ['tag1', 'tag2'],
+            tagColor: TagColors.RED,
+            nodeType: NodeTypes.HEADER,
+        }
+    },
+    {
         id: 'n1',
         type: 'generic',
         position: { x: 100, y: 100 },
@@ -112,6 +145,7 @@ const initialNodes: Node[] = [
             description: 'This is the first node.',
             tags: ['tag1', 'tag2'],
             tagColor: TagColors.BLUE,
+            nodeType: NodeTypes.CHILD,
         }
     },
     {
@@ -123,6 +157,7 @@ const initialNodes: Node[] = [
             description: 'This is the second node.',
             tags: ['tag3'],
             tagColor: TagColors.GREEN,
+            nodeType: NodeTypes.CHILD,
         }
     },
 ];
@@ -137,6 +172,7 @@ const initialEdges = [{
 
 const nodeTypes = {
     generic: GenericNode,
+    header: GenericNode,
 };
 
 export default function Page() {
