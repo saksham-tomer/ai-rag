@@ -155,7 +155,7 @@ export default function ChatView({ props, chatId }: { props: HomeProps, chatId: 
             </header>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[400px] max-h-[600px]">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 xl:p-12 space-y-4 min-h-[400px] max-h-[600px]">
                 {messages.length === 0 && (
                     <div className="text-center text-gray-500 mt-8">
                         <p>Start a conversation! Ask me anything about your documents.</p>

@@ -1,4 +1,4 @@
-import { Bold, BookA, Italic, LayoutGrid, List, Mic, Paperclip, PlusIcon, Send, Type } from "lucide-react";
+import { Bold, BookA, Globe2Icon, Italic, LayoutGrid, List, Mic, Paperclip, PlusIcon, Send, Type } from "lucide-react";
 import React, { useState, KeyboardEvent, useRef, useEffect } from "react";
 
 type ChatProps = {
@@ -23,6 +23,9 @@ export default function ChatComponent({
 }: ChatComponentProps) {
     
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const toggleRef = useRef<HTMLInputElement>(null);
+
+    const [toggled,setToggled] = useState(false);
 
     useEffect(() => {
         if (textareaRef.current) {
@@ -47,8 +50,8 @@ export default function ChatComponent({
     };
 
     return (
-        <div className="w-full flex p-4 rounded-2xl shadow-xl flex-col items-center gap-6 bg-white border-2 border-gray-200/40">
-            <div className="flex border-2 w-full border-gray-200/50 rounded-xl p-4 min-h-[10rem] flex-col items-center">
+        <div className="w-full flex p-4 rounded-2xl max-w-[70rem] mx-auto mb-8 shadow-xl flex-col items-center gap-6 bg-transparent border-2 border-gray-200/40">
+            <div className="flex border-2 w-full border-gray-200/50 bg-transparent rounded-xl p-4 min-h-[10rem] flex-col items-center">
                 <section className="flex flex-row w-full justify-between items-center">
                     <div className="flex flex-row gap-2 items-center">
                         <Bold className="w-4 h-4 text-gray-600 cursor-pointer" />
@@ -56,7 +59,12 @@ export default function ChatComponent({
                         <List className="w-4 h-4 text-gray-600 cursor-pointer" />
                         <Type className="w-4 h-4 text-gray-600 cursor-pointer" />
                     </div>
-                    <div className="flex flex-row gap-2 items-center">
+                    <div className="flex flex-row gap-2 items-center transition-all">
+                         {toggled ? <p className="text-xs text-gray-400">Turn On Search</p> : <p className="text-xs text-gray-400">Turn Off Search</p>}
+                        <div onClick={()=>setToggled((prev)=>!prev)} className="flex p-1 transition-all cursor-pointer hover:ring-[1.2px] hover:ring-gray-400  shadow-md min-w-[2.5rem] hover:bg-gray-50 duration-200 ease-in transform-gpu rounded-3xl ring-1 ring-gray-300 bg-white flex-row items-center justify-between">
+                            <div className={`${toggled ? "bg-purple-300 ring-1 ring-purple-400 translate-x-0": "bg-green-300 ring-1 ring-green-400 translate-x-5"} rounded-full min-w-[10px] min-h-[10px] transition-all duration-200 ease-in transform-gpu`}/> 
+                        </div>
+                        <Globe2Icon className={`${toggled ? "text-gray-400":"text-green-400"} w-4 h-4 mr-2`}/>
                         <Paperclip className="w-4 h-4 text-gray-600 cursor-pointer" />
                         <Mic className="w-4 h-4 text-gray-600 cursor-pointer" />
                     </div>
